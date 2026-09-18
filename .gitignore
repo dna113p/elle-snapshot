@@ -1,0 +1,13 @@
+node_modules/
+.snapshots/
+snapshots/
+coverage/
+*.log
+*.tgz
+.env
+.env.*
+!.env.example
+.DS_Store
+.pi/
+.agents/
+.codex/

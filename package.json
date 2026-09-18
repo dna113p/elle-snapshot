@@ -1,0 +1,57 @@
+{
+  "name": "elle-snapshot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "elle-snapshot": "./bin/elle-snapshot.js"
+  },
+  "scripts": {
+    "check": "tsc --noEmit && tsc -p figma-plugin/tsconfig.json --noEmit",
+    "capture-url": "bun run src/cli.ts capture-url",
+    "bundle-image": "bun run src/cli.ts bundle-image",
+    "compare": "bun run src/cli.ts compare",
+    "figma-receive": "bun run src/cli.ts figma-receive",
+    "figma:build": "tsc -p figma-plugin/tsconfig.json",
+    "test": "bun test --timeout 30000 ./tests/unit",
+    "test:browser": "bun test --timeout 60000 ./tests/browser",
+    "validate": "bun run check && bun run test && bun run test:browser && bun run figma:build",
+    "demo": "bun run scripts/demo.ts"
+  },
+  "dependencies": {
+    "pixelmatch": "^7.2.0",
+    "playwright": "^1.53.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.126.0",
+    "@types/node": "^24.5.2",
+    "@types/pngjs": "^6.0.5",
+    "typescript": "^5.9.2"
+  },
+  "description": "Local browser and Figma snapshots with portable bundles and visual comparison reports.",
+  "engines": {
+    "node": ">=22",
+    "bun": ">=1.3.8"
+  },
+  "packageManager": "bun@1.3.8",
+  "license": "UNLICENSED",
+  "files": [
+    "bin/",
+    "src/",
+    "figma-plugin/",
+    "docs/",
+    "README.md",
+    "skills/",
+    "examples/",
+    "scripts/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dna113p/elle-snapshot.git"
+  },
+  "homepage": "https://github.com/dna113p/elle-snapshot#readme",
+  "bugs": {
+    "url": "https://github.com/dna113p/elle-snapshot/issues"
+  }
+}

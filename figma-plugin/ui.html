@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font: 12px/1.4 Inter, system-ui, sans-serif;
+        color: #222;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 14px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 4px 8px;
+        margin: 0 0 12px;
+      }
+      dt { color: #666; }
+      dd { margin: 0; word-break: break-all; }
+      button {
+        height: 32px;
+        padding: 0 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: #fff;
+        font: inherit;
+      }
+      button.primary {
+        border-color: #2563eb;
+        background: #2563eb;
+        color: #fff;
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+        color: #666;
+      }
+      input,
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font: inherit;
+      }
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+      #status {
+        margin-top: 12px;
+        white-space: pre-wrap;
+      }
+      .ok { color: #137333; }
+      .error { color: #b3261e; }
+    </style>
+  </head>
+  <body>
+    <h2>Elle Snapshot</h2>
+    <dl>
+      <dt>Name</dt><dd id="name">—</dd>
+      <dt>Type</dt><dd id="type">—</dd>
+      <dt>ID</dt><dd id="id">—</dd>
+      <dt>Size</dt><dd id="size">—</dd>
+      <dt>Page</dt><dd id="page">—</dd>
+    </dl>
+    <label for="receiverToken">Receiver token (from terminal)</label>
+    <input id="receiverToken" type="password" autocomplete="off" placeholder="Start elle-snapshot figma-receive, then paste its token" />
+    <label for="exportName">Export name</label>
+    <input id="exportName" placeholder="Friendly name for files/agent, defaults to selected node name" />
+    <label for="context">Agent context</label>
+    <textarea id="context" placeholder="What should the agent know? e.g. app route, selector, intended state, props, constraints…"></textarea>
+    <button id="send" class="primary">Send selection</button>
+    <button id="refresh">Refresh</button>
+    <div id="status">Local receiver: http://127.0.0.1:4317/figma-selection
+Run: cd /path/to/your/project && elle-snapshot figma-receive --output-dir .snapshots/figma</div>
+
+    <script>
+      const endpoint = 'http://127.0.0.1:4317/figma-selection';
+      const contextStorageKey = 'elle-snapshot.agentContext';
+      const exportNameStorageKey = 'elle-snapshot.exportName';
+      let latestSelection = null;
+
+      const $ = (id) => document.getElementById(id);
+
+      function setStatus(message, kind = '') {
+        const el = $('status');
+        el.textContent = message;
+        el.className = kind;
+      }
+
+      function readStoredValue(key) {
+        try {
+          return localStorage.getItem(key) || '';
+        } catch {
+          return '';
+        }
+      }
+
+      function writeStoredValue(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch {
+          // Figma can restrict storage in plugin iframes; persistence is optional.
+        }
+      }
+
+      function renderSelection(selection) {
+        latestSelection = selection;
+        $('name').textContent = selection?.name || 'No selection';
+        $('type').textContent = selection?.type || '—';
+        $('id').textContent = selection?.id || '—';
+        $('size').textContent = selection && selection.width != null && selection.height != null
+          ? `${selection.width} × ${selection.height}`
+          : '—';
+        $('page').textContent = selection?.pageName || '—';
+      }
+
+      function bytesToBase64(bytes) {
+        const uint8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+      }
+
+      function currentContext() {
+        return $('context').value.trim();
+      }
+
+      function currentExportName() {
+        return $('exportName').value.trim();
+      }
+
+      async function postExport(message) {
+        renderSelection(message.selection);
+
+        if (message.error) {
+          setStatus(message.error, 'error');
+          return;
+        }
+
+        if (!message.selection || !message.pngBytes) {
+          setStatus('Nothing to send.', 'error');
+          return;
+        }
+
+        const token = $('receiverToken').value.trim();
+        if (!token) throw new Error('Paste the receiver token from your terminal first.');
+        setStatus('Sending selection to local receiver…');
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            selection: message.selection,
+            exportName: currentExportName(),
+            context: {
+              text: currentContext(),
+              capturedAt: new Date().toISOString(),
+            },
+            image: {
+              format: 'png',
+              scale: 1,
+              base64: bytesToBase64(message.pngBytes),
+            },
+            designEvidence: message.designEvidence,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Receiver returned ${response.status}: ${await response.text()}`);
+        }
+
+        const result = await response.json().catch(() => ({}));
+        setStatus(
+          `Sent.\nDesign evidence: ${result.hasDesignEvidence ? 'yes' : 'no'}\n${result.bundlePath || result.pngPath || ''}\n${result.designEvidencePath || ''}\n${result.metadataPath || ''}`,
+          result.hasDesignEvidence ? 'ok' : 'error',
+        );
+        parent.postMessage({
+          pluginMessage: {
+            type: 'notify',
+            text: `Elle Snapshot sent ${result.exportName || message.selection.name}${result.filesystemName && result.filesystemName !== result.exportName ? ` (${result.filesystemName})` : ''}`,
+          },
+        }, '*');
+      }
+
+      onmessage = async (event) => {
+        const message = event.data.pluginMessage;
+        if (!message) return;
+
+        if (message.kind === 'selection-metadata') {
+          renderSelection(message.selection);
+          return;
+        }
+
+        if (message.kind === 'selection-export') {
+          try {
+            await postExport(message);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            setStatus(
+              message === 'Failed to fetch'
+                ? 'Failed to fetch. Is the local receiver running?\n\nRun: cd /path/to/your/project && elle-snapshot figma-receive --output-dir .snapshots/figma'
+                : message,
+              'error',
+            );
+            parent.postMessage({ pluginMessage: { type: 'notify', text: `Elle Snapshot failed: ${message}` } }, '*');
+          }
+        }
+      };
+
+      $('send').addEventListener('click', () => {
+        setStatus('Requesting export from Figma...');
+        parent.postMessage({ pluginMessage: { type: 'send-selection' } }, '*');
+      });
+
+      $('refresh').addEventListener('click', () => {
+        setStatus('Refreshing selection...');
+        parent.postMessage({ pluginMessage: { type: 'refresh-selection' } }, '*');
+      });
+
+      $('context').value = readStoredValue(contextStorageKey);
+      $('context').addEventListener('input', () => {
+        writeStoredValue(contextStorageKey, $('context').value);
+      });
+      $('exportName').value = readStoredValue(exportNameStorageKey);
+      $('exportName').addEventListener('input', () => {
+        writeStoredValue(exportNameStorageKey, $('exportName').value);
+      });
+    </script>
+  </body>
+</html>

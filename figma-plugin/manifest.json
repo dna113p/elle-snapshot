@@ -1,0 +1,24 @@
+{
+  "name": "Elle Snapshot",
+  "id": "1634429228884343761",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [
+    "inspect"
+  ],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma",
+    "dev"
+  ],
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ],
+    "devAllowedDomains": [
+      "http://127.0.0.1:4317"
+    ]
+  }
+}
