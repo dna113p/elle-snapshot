@@ -8,7 +8,7 @@ import { json, root, temporaryDirectory } from '../helpers.ts';
 test('standalone demo captures bundled fixtures and preserves previous runs', async () => {
   const dir = await temporaryDirectory();
   const output = join(dir,'demo');
-  const run = () => spawnSync('bun',[join(root,'scripts/demo.ts'),'--output-dir',output],{
+  const run = () => spawnSync(process.execPath,[join(root,'scripts/demo.ts'),'--output-dir',output],{
     cwd:dir,encoding:'utf8',timeout:30_000,
   });
   try {

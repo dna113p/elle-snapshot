@@ -6,15 +6,15 @@ description: Capture browser pages or components, import PNG or Figma references
 # Elle Snapshot
 
 Use the existing `elle-snapshot` CLI to produce inspectable visual evidence. This
-skill contains instructions only; the CLI, Bun, and Playwright Chromium must be
+skill contains instructions only; the CLI, Bun 1.4.2+, and Playwright Chromium must be
 installed separately. It is independent of any particular application or agent.
 
 ## Prepare the check
 
 1. Run `elle-snapshot --help`. If unavailable but the source checkout is known, use
-   `node /path/to/elle-snapshot/bin/elle-snapshot.js` instead. In that checkout,
+   `bun /path/to/elle-snapshot/bin/elle-snapshot.js` instead. In that checkout,
    dependencies install with `bun install --frozen-lockfile` and Chromium with
-   `bun x playwright install chromium`. Use an approved checkout; do not substitute
+   `bun x --bun playwright install chromium`. Use an approved checkout; do not substitute
    a different package with the same name.
 2. Establish the reference: approved PNG, Figma export, or before-change capture.
    A before-change baseline tests regression, not design compliance. Preserve it.

@@ -1,7 +1,11 @@
 # Contributing
 
 Install using the README, then run `bun run validate`. Keep `bun.lock` committed;
-use the pinned Bun version for reproducible dependency resolution. After editing
+use Bun 1.4.2 (the pinned version) for reproducible validation. No separate Node.js
+runtime is needed. Run third-party CLIs with `bun run --bun` / `bun x --bun` so
+Node shebangs do not silently select another runtime. `node:` imports and
+`@types/node` describe compatibility APIs implemented by Bun, not a Node executable
+dependency. After editing
 the plugin's TypeScript, run `bun run figma:build` and include `figma-plugin/code.js`.
 
 Add regression tests for behavior changes. Unit tests generate PNGs in temporary

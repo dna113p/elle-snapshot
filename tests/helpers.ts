@@ -23,6 +23,6 @@ export const image = async (dir: string, name: string, channel = 0, width = 16, 
   await writeFile(path, pngBytes(width, height, channel));
   return path;
 };
-export const cli = (args: string[], cwd = root) => spawnSync('node', [join(root, 'bin/elle-snapshot.js'), ...args], {
+export const cli = (args: string[], cwd = root) => spawnSync(process.execPath, [join(root, 'bin/elle-snapshot.js'), ...args], {
   cwd, encoding: 'utf8', timeout: 30_000,
 });

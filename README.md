@@ -9,21 +9,24 @@ The Figma integration is a development plugin, not a published Community plugin.
 
 ## Install from source
 
-Prerequisites: **Node.js 22+**, **Bun 1.3.8+**, and Git (or a downloaded source archive).
-Install Node and Bun using their official installers, then:
+Prerequisites: **Bun 1.4.2+** and Git (or a downloaded source archive).
+Install [Bun](https://bun.sh/) using its official installer, then:
 
 ```bash
 git clone https://github.com/dna113p/elle-snapshot.git
 cd elle-snapshot
 bun install --frozen-lockfile
-bun x playwright install chromium
+bun x --bun playwright install chromium
 bun run check
-node bin/elle-snapshot.js --help
+bun bin/elle-snapshot.js --help
 ```
 
 On Linux, missing browser system libraries can be installed with
-`bun x playwright install --with-deps chromium` (may require administrator access).
-The browser is only needed for `capture-url` and browser tests.
+`bun x --bun playwright install --with-deps chromium` (may require administrator access).
+The browser is only needed for `capture-url`, the demo, and browser tests.
+**Node.js and npm are not required.** The CLI executes TypeScript directly in Bun;
+`--bun` keeps third-party setup commands on the same runtime. Bun 1.4.2 is pinned
+for CI, including Windows Chromium-launch fixes absent from older Bun versions.
 
 Optional: expose `elle-snapshot` on your PATH:
 
@@ -33,7 +36,7 @@ elle-snapshot --help
 ```
 
 Ensure Bun's global bin directory is on PATH. If a different installation shadows
-that command, use `node /path/to/elle-snapshot/bin/elle-snapshot.js` directly.
+that command, use `bun /path/to/elle-snapshot/bin/elle-snapshot.js` directly.
 Keep this checkout in place: the linked command runs its source files.
 There is no npm-registry release; `private: true` prevents accidental publication.
 
@@ -81,10 +84,10 @@ Use the [Agent Skills installer](https://github.com/vercel-labs/skills) directly
 
 ```bash
 # Preview discovery without installing anything.
-npx skills add dna113p/elle-snapshot --list
+bun x --bun skills add dna113p/elle-snapshot --list
 
 # Install for your user; choose your coding agent when prompted.
-npx skills add dna113p/elle-snapshot --skill elle-snapshot --global
+bun x --bun skills add dna113p/elle-snapshot --skill elle-snapshot --global
 ```
 
 To install only into a project, run from that project's directory and omit
@@ -244,8 +247,8 @@ For an agent-operated feedback loop, see [the agent workflow](docs/agent-workflo
 
 | Symptom | Action |
 | --- | --- |
-| `bun` not found | Install Bun and ensure it is on PATH; the Node launcher requires it. |
-| Chromium executable missing | Run `bun x playwright install chromium` from this checkout. |
+| `bun` not found | Install Bun and ensure it is on PATH; the CLI runs directly with Bun. |
+| Chromium executable missing | Run `bun x --bun playwright install chromium` from this checkout. |
 | Linux browser dependencies missing | Run the `--with-deps` install command above. |
 | Missing selector or timeout | Verify the URL/state and selector; increase `--wait-after-load-ms` for delayed content. |
 | Login page captured | Capture a locally accessible test page or use your own trusted local proxy. Auth-state injection is not implemented. |
